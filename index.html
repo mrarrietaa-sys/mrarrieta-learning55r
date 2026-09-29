@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Past Participle Match — Memory Game (B1)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:        #111111;
+    --ink-soft:   #3A3A3A;
+    --gray:       #6E6E6E;
+    --gray-soft:  #E4E4E4;
+    --white:      #FFFFFF;
+    --r-lg: 26px;
+    --r-md: 16px;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; }
+  }
+
+  html,body{ height:100%; }
+
+  body{
+    font-family:'Inter', sans-serif;
+    background:var(--white);
+    color:var(--ink);
+    min-height:100vh;
+    padding:36px 18px;
+    position:relative;
+    overflow-x:hidden;
+  }
+
+  .bg-blob{ position:fixed; border-radius:50%; filter:blur(60px); z-index:0; opacity:0.6; }
+  .bg-blob.b1{ width:360px; height:360px; background:var(--gray-soft); top:-140px; right:-120px; }
+  .bg-blob.b2{ width:320px; height:320px; background:var(--gray-soft); bottom:-140px; left:-120px; }
+
+  .stage{ max-width:760px; margin:0 auto; position:relative; z-index:1; }
+
+  /* ---------- Persistent header ---------- */
+  .header-row{
+    display:flex; align-items:center; gap:10px;
+    margin-bottom:26px;
+  }
+  .m1-badge{
+    width:44px; height:44px; border-radius:12px;
+    background:var(--ink); color:var(--white);
+    border:2.5px solid var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Poppins',sans-serif; font-weight:800; font-size:15px;
+    box-shadow:0 6px 12px -4px rgba(17,17,17,0.35);
+  }
+  .m1-label{
+    font-family:'Poppins',sans-serif; font-weight:800; font-size:16px;
+    color:var(--ink);
+  }
+  .m1-label span{ color:var(--gray); }
+
+  .meta-row{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:18px; gap:10px; flex-wrap:wrap;
+  }
+  .q-count{
+    font-family:'Inter',sans-serif; font-weight:700; font-size:13px;
+    letter-spacing:0.04em; color:var(--ink); text-transform:uppercase;
+  }
+  .timer-badge, .score-badge{
+    font-family:'Inter',sans-serif; font-weight:800; font-size:13px;
+    color:var(--ink); background:var(--white);
+    border:2.5px solid var(--ink);
+    padding:8px 16px; border-radius:999px;
+    white-space:nowrap;
+  }
+
+  /* ---------- Screens ---------- */
+  .screen{ display:none; }
+  .screen.active{ display:block; animation:fadeUp .45s ease both; }
+  @keyframes fadeUp{
+    from{ opacity:0; transform:translateY(12px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  /* ---------- WELCOME ---------- */
+
+  .welcome{ text-align:center; padding:36px 18px 10px; }
+
+  .eyebrow-pill{
+    display:inline-flex; align-items:center; gap:7px;
+    background:var(--ink); color:var(--white);
+    font-family:'Inter',sans-serif; font-weight:700; font-size:12px;
+    letter-spacing:0.1em; text-transform:uppercase;
+    padding:9px 18px; border-radius:999px;
+    margin-bottom:26px;
+  }
+
+  h1.title{
+    position:relative; display:inline-block;
+    font-family:'Poppins',sans-serif; font-weight:900;
+    font-size:clamp(32px,8vw,52px);
+    text-transform:uppercase;
+    color:var(--ink);
+    letter-spacing:-0.01em;
+    line-height:1.05;
+    margin-bottom:22px;
+  }
+  h1.title::after{
+    content:""; position:absolute; left:2%; right:2%; bottom:-8px;
+    height:15px; background:var(--gray-soft); border-radius:8px; z-index:-1;
+  }
+
+  p.lead{
+    font-size:17px; font-weight:700; color:var(--ink);
+    margin-bottom:6px;
+  }
+  p.sub-lead{
+    font-size:14px; color:var(--gray); margin-bottom:34px;
+  }
+
+  .preview-row{
+    display:flex; gap:14px; justify-content:center; flex-wrap:wrap;
+    margin-bottom:32px;
+  }
+  .chip-preview{
+    position:relative;
+    font-family:'Inter',sans-serif; font-weight:700; font-size:15px;
+    background:var(--white); color:var(--ink);
+    border:2.5px solid var(--ink);
+    border-radius:14px;
+    padding:13px 20px;
+  }
+  .chip-preview::before{
+    content:""; position:absolute; left:18px; bottom:-9px;
+    border-left:8px solid transparent; border-right:8px solid transparent;
+    border-top:8px solid var(--ink);
+  }
+  .chip-preview::after{
+    content:""; position:absolute; left:20px; bottom:-6px;
+    border-left:6px solid transparent; border-right:6px solid transparent;
+    border-top:6px solid var(--white);
+  }
+
+  .info-box{
+    text-align:left; background:var(--gray-soft); border:2.5px dashed var(--gray);
+    border-radius:var(--r-md); padding:18px 20px; margin:0 0 34px;
+    font-size:13.5px; color:var(--ink); line-height:1.55;
+  }
+  .info-box strong{ color:var(--ink); }
+
+  .btn{
+    font-family:'Inter',sans-serif; font-weight:700; font-size:15px;
+    border-radius:999px;
+    padding:17px 32px;
+    cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center; gap:9px;
+    transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
+    border:none;
+  }
+  .btn:focus-visible{ outline:3px solid var(--gray); outline-offset:3px; }
+
+  .btn-primary{
+    background:var(--ink); color:var(--white);
+    border:3px solid var(--ink);
+    box-shadow:4px 5px 0 var(--gray);
+    width:100%; max-width:340px;
+  }
+  .btn-primary:hover{ transform:translate(-2px,-2px); box-shadow:6px 7px 0 var(--gray); }
+  .btn-primary:active{ transform:translate(1px,2px); box-shadow:2px 2px 0 var(--gray); }
+  .btn-primary:disabled{
+    background:var(--gray-soft); border-color:var(--gray-soft); color:var(--gray);
+    box-shadow:none; cursor:not-allowed; transform:none;
+  }
+
+  .btn-sm{
+    font-size:13px; padding:10px 18px; border-radius:999px;
+    background:var(--white); color:var(--ink);
+    border:2.5px solid var(--ink);
+    box-shadow:2.5px 3px 0 rgba(17,17,17,0.18);
+  }
+  .btn-sm:hover{ transform:translate(-1px,-1px); box-shadow:3.5px 4px 0 rgba(17,17,17,0.18); }
+  .btn-sm:active{ transform:translate(1px,1px); box-shadow:1px 1px 0 rgba(17,17,17,0.18); }
+  .btn-sm.speaking{ animation:speakPulse .7s ease-in-out infinite; }
+  @keyframes speakPulse{ 0%,100%{ opacity:1;} 50%{ opacity:.6;} }
+  .btn-sm svg{ width:14px; height:14px; }
+
+  /* ---------- ACTIVITY CARD ---------- */
+
+  .card{
+    background:var(--white);
+    border:3px solid var(--ink);
+    border-radius:var(--r-lg);
+    box-shadow:9px 10px 0 var(--gray-soft);
+    padding:28px 26px;
+    margin-bottom:20px;
+  }
+
+  .card-label{
+    font-family:'Inter',sans-serif; font-weight:800; font-size:14px;
+    letter-spacing:0.04em; text-transform:uppercase;
+    color:var(--ink); margin-bottom:4px;
+  }
+  .card-sub{ font-size:14px; color:var(--gray); margin-bottom:22px; }
+
+  /* ---------- Memory grid ---------- */
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(6, 1fr);
+    gap:9px;
+    margin-bottom:8px;
+  }
+  .mcard{
+    position:relative;
+    aspect-ratio:1/1;
+    cursor:pointer;
+    perspective:600px;
+  }
+  .mcard-inner{
+    position:relative; width:100%; height:100%;
+    transition:transform .45s cubic-bezier(.22,1,.36,1);
+    transform-style:preserve-3d;
+  }
+  .mcard.flipped .mcard-inner,
+  .mcard.matched .mcard-inner{ transform:rotateY(180deg); }
+
+  .mcard-face{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    border-radius:12px;
+    backface-visibility:hidden;
+    border:2.5px solid var(--ink);
+    padding:4px;
+    text-align:center;
+  }
+  .mcard-front{
+    background:var(--ink-soft);
+    color:var(--white);
+    font-family:'Poppins',sans-serif; font-weight:800; font-size:22px;
+  }
+  .mcard-back{
+    background:var(--white);
+    color:var(--ink);
+    transform:rotateY(180deg);
+    font-family:'Poppins',sans-serif; font-weight:800;
+    font-size:clamp(11px, 2.6vw, 15px);
+    line-height:1.15;
+    word-break:break-word;
+  }
+  .mcard.matched .mcard-back{
+    background:var(--ink); color:var(--white); border-color:var(--ink);
+  }
+  .mcard.wrong .mcard-back{
+    background:var(--white); color:var(--ink); border-color:var(--ink);
+    animation:shakeCard .4s ease;
+  }
+  .mcard.matched{ cursor:default; }
+  .mcard.matched .mcard-inner{ animation:matchPop .35s ease .1s both; }
+  @keyframes matchPop{ 0%{ transform:rotateY(180deg) scale(1);} 50%{ transform:rotateY(180deg) scale(1.08);} 100%{ transform:rotateY(180deg) scale(1);} }
+  @keyframes shakeCard{
+    10%,90%{ transform:rotateY(180deg) translateX(-2px); }
+    20%,80%{ transform:rotateY(180deg) translateX(4px); }
+    30%,50%,70%{ transform:rotateY(180deg) translateX(-6px); }
+    40%,60%{ transform:rotateY(180deg) translateX(6px); }
+  }
+
+  .toast-row{ display:flex; justify-content:center; min-height:44px; margin:14px 0 4px; }
+  .feedback-toast{
+    display:none; align-items:center; gap:10px;
+    font-family:'Inter',sans-serif; font-weight:800; font-size:14px;
+    padding:11px 18px; border-radius:var(--r-md);
+    border:2.5px solid var(--ink);
+  }
+  .feedback-toast.show{ display:flex; animation:popIn .3s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes popIn{ from{ opacity:0; transform:scale(.92) translateY(-4px);} to{ opacity:1; transform:scale(1) translateY(0);} }
+  .feedback-toast.correct{ background:var(--ink); color:var(--white); box-shadow:3px 4px 0 var(--gray-soft); }
+  .feedback-toast.incorrect{ background:var(--white); color:var(--ink); box-shadow:3px 4px 0 var(--gray-soft); border-color:var(--ink); }
+  .feedback-toast svg{ width:18px; height:18px; flex-shrink:0; }
+
+  /* ---------- Reveal panel (photo + sentence + audio) ---------- */
+  .reveal-panel{
+    display:none;
+    margin-top:8px;
+    background:var(--gray-soft);
+    border:2.5px dashed var(--gray);
+    border-radius:var(--r-md);
+    padding:16px 16px 18px;
+  }
+  .reveal-panel.show{ display:block; animation:popIn .3s ease both; }
+  .reveal-body{ display:flex; gap:14px; align-items:center; }
+  .reveal-photo{
+    flex:0 0 96px; width:96px; height:96px; border-radius:12px;
+    border:2.5px solid var(--ink); overflow:hidden; background:var(--white);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .reveal-photo img{ width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity .3s ease; }
+  .reveal-text{ flex:1; min-width:0; }
+  .reveal-pair{
+    font-family:'Poppins',sans-serif; font-weight:800; font-size:14px;
+    color:var(--ink); margin-bottom:4px; letter-spacing:0.02em;
+  }
+  .reveal-pair .arrow{ color:var(--gray); margin:0 4px; }
+  .reveal-sentence{ font-size:13.5px; color:var(--ink-soft); margin-bottom:10px; line-height:1.4; }
+  .reveal-note{ font-size:12px; color:var(--gray); font-style:italic; }
+
+  /* ---------- FINAL ---------- */
+
+  .final-card{ text-align:center; padding:48px 32px 40px; }
+
+  .trophy-wrap{
+    width:88px; height:88px; margin:0 auto 22px;
+    background:var(--ink); border-radius:22px;
+    border:3px solid var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:4px 5px 0 var(--gray-soft);
+    transform:rotate(-4deg);
+    animation:trophyPop .6s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  @keyframes trophyPop{ 0%{ transform:scale(0) rotate(-24deg);} 100%{ transform:scale(1) rotate(-4deg);} }
+  .trophy-wrap svg{ width:42px; height:42px; }
+
+  h2.final-title{
+    font-family:'Poppins',sans-serif; font-weight:900; text-transform:uppercase;
+    font-size:28px; margin-bottom:8px;
+  }
+  p.final-sub{ color:var(--gray); font-size:14.5px; margin-bottom:28px; }
+
+  .score-display{
+    display:inline-flex; align-items:baseline; gap:6px;
+    font-family:'Poppins',sans-serif; font-weight:900;
+    font-size:50px; color:var(--ink);
+    margin-bottom:4px;
+  }
+  .score-display span.of{ font-size:22px; color:var(--gray); font-weight:700; }
+  .score-label{
+    font-family:'Inter',sans-serif; font-weight:800;
+    font-size:12px; letter-spacing:0.1em; text-transform:uppercase;
+    color:var(--gray); margin-bottom:28px;
+  }
+
+  .final-btn-row{ display:flex; flex-direction:column; gap:12px; align-items:center; }
+  .final-btn-row .btn{ width:100%; max-width:340px; }
+
+  @media (max-width:560px){
+    .grid{ grid-template-columns:repeat(4, 1fr); gap:7px; }
+    .card{ padding:20px 16px; }
+    .final-card{ padding:40px 20px 34px; }
+    .welcome{ padding:26px 10px 6px; }
+    .reveal-body{ flex-direction:column; align-items:flex-start; }
+    .reveal-photo{ width:100%; height:150px; flex:none; }
+  }
+  @media (max-width:380px){
+    .grid{ grid-template-columns:repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-blob b1" aria-hidden="true"></div>
+<div class="bg-blob b2" aria-hidden="true"></div>
+
+<audio id="tts-audio" preload="none" style="display:none;"></audio>
+
+<div class="stage">
+
+  <div class="header-row">
+    <div class="m1-badge">B1</div>
+    <div class="m1-label">INTERMEDIATE <span>B1</span></div>
+  </div>
+
+  <!-- ============ WELCOME SCREEN ============ -->
+  <section class="screen active" id="screen-welcome">
+    <div class="welcome">
+      <div class="eyebrow-pill">✦ Memory Matching Game</div>
+      <h1 class="title">Past Participle Match</h1>
+      <p class="lead">Flip two cards to find a verb and its past participle.</p>
+      <p class="sub-lead">Match all 12 pairs as fast as you can — and hear each one pronounced naturally.</p>
+
+      <div class="preview-row" aria-hidden="true">
+        <div class="chip-preview">EAT</div>
+        <div class="chip-preview">EATEN</div>
+        <div class="chip-preview">SLEPT</div>
+      </div>
+
+      <div class="info-box">
+        <strong>Instructions:</strong> tap a card to flip it over, then tap a second card. If the two cards form a verb pair (for example <strong>eat</strong> and <strong>eaten</strong>), they stay face up and you'll see a real photo, an example sentence, and hear the sentence read aloud in natural English. If they don't match, the cards flip back and you try again. Find all <strong>12 pairs</strong> to finish the game — try to do it in the shortest time possible!
+      </div>
+
+      <button class="btn btn-primary" id="btn-start">
+        START GAME
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- ============ ACTIVITY SCREEN ============ -->
+  <section class="screen" id="screen-activity">
+    <div class="meta-row">
+      <div class="timer-badge">⏱ <span id="timer-value">0:00</span></div>
+      <div class="q-count" id="pairs-count">0 / 12 PAIRS</div>
+      <div class="score-badge">MOVES: <span id="moves-value">0</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Find the matching pairs</div>
+      <div class="card-sub">Base verb ↔ past participle. Tap two cards at a time.</div>
+
+      <div class="grid" id="grid"></div>
+
+      <div class="toast-row">
+        <div class="feedback-toast" id="feedback-toast"></div>
+      </div>
+
+      <div class="reveal-panel" id="reveal-panel">
+        <div class="reveal-body">
+          <div class="reveal-photo" id="reveal-photo"><img id="reveal-img" alt=""></div>
+          <div class="reveal-text">
+            <div class="reveal-pair" id="reveal-pair-label"></div>
+            <div class="reveal-sentence" id="reveal-sentence"></div>
+            <button class="btn-sm" id="btn-listen" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+              <span id="listen-label">LISTEN</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FINAL SCREEN ============ -->
+  <section class="screen" id="screen-final">
+    <div class="card final-card">
+      <div class="trophy-wrap">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 01-10 0V4z" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M7 5H4a1 1 0 00-1 1v1a4 4 0 004 4M17 5h3a1 1 0 011 1v1a4 4 0 01-4 4" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <h2 class="final-title">Well done!</h2>
+      <p class="final-sub">You matched all 12 past participle pairs.</p>
+
+      <div class="score-display"><span id="final-time">0:00</span></div>
+      <div class="score-label">Your time</div>
+
+      <p class="final-sub" id="final-moves-line" style="margin-top:-16px;">0 moves</p>
+
+      <div class="final-btn-row">
+        <button class="btn btn-primary" id="btn-retry">PLAY AGAIN</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+
+  /* Each pair: base verb, past participle, a natural example sentence using
+     the present perfect (the tense that actually needs the past participle),
+     a real photo illustrating it, and the gender of the person in that photo
+     so the narration voice matches. */
+  const PAIRS = [
+    { base:"EAT", pp:"EATEN", sentence:"She has eaten a sandwich for lunch.", img:"https://images.pexels.com/photos/7624957/pexels-photo-7624957.jpeg?auto=compress&cs=tinysrgb&h=400&fit=crop&w=600", voice:"F" },
+    { base:"SLEEP", pp:"SLEPT", sentence:"He has slept for eight hours.", img:"https://images.pexels.com/photos/7556587/pexels-photo-7556587.jpeg?auto=compress&cs=tinysrgb&h=400&fit=crop&w=600", voice:"M" },
+    { base:"WRITE", pp:"WRITTEN", sentence:"She has written a letter to her friend.", img:"https://images.pexels.com/photos/4240571/pexels-photo-4240571.jpeg?auto=compress&cs=tinysrgb&h=400&fit=crop&w=600", voice:"F" },
+    { base:"BREAK", pp:"BROKEN", sentence:"Someone has broken the kitchen window.", img:"https://images.pexels.com/photos/2913776/pexels-photo-2913776.jpeg?auto=compress&cs=tinysrgb&h=400&fit=crop&w=600", voice:"M" },
+    { base:"SEE", pp:"SEEN", sentence:"She has seen that movie twice already.", img:"https://images.pexels.com/photos/8028953/pexels-photo-8028953.jpeg?auto=compress&cs=tinysrgb&h=400&fit=crop&w=600", voice:"F" },
+    { base:"DRIVE", pp:"DRIVEN", sentence:"He has driven this car for five years.", img:"https://images.pexels.com/photos/5478084/pexels-photo-5478084.jpeg?auto=compress&cs=tinysrgb&h=400&fit=crop&w=600", voice:"M" },
+    { base:"SING", pp:"SUNG", sentence:"She has sung this song many times.", img:"https://images.pexels.com/photos/9419222/pexels-photo-9419222.jpeg?auto=compress&cs=tinysrgb&h=400&fit=crop&w=600", voice:"F" },
+    { base:"GIVE", pp:"GIVEN", sentence:"He has given her a beautiful gift.", img:"https://images.pexels.com/photos/5493208/pexels-photo-5493208.jpeg?auto=compress&cs=tinysrgb&h=400&fit=crop&w=600", voice:"M" },
+    { base:"SWIM", pp:"SWUM", sentence:"She has swum in this pool before.", img:"https://images.pexels.com/photos/257832/pexels-photo-257832.jpeg?auto=compress&cs=tinysrgb&h=400&fit=crop&w=600", voice:"F" },
+    { base:"SPEAK", pp:"SPOKEN", sentence:"He has spoken at many conferences.", img:"https://images.pexels.com/photos/8531906/pexels-photo-8531906.jpeg?auto=compress&cs=tinysrgb&h=400&fit=crop&w=600", voice:"M" },
+    { base:"WEAR", pp:"WORN", sentence:"She has worn those sunglasses all summer.", img:"https://images.pexels.com/photos/1485031/pexels-photo-1485031.jpeg?auto=compress&cs=tinysrgb&h=400&fit=crop&w=600", voice:"F" },
+    { base:"RIDE", pp:"RIDDEN", sentence:"He has ridden that bicycle to work all week.", img:"https://images.pexels.com/photos/12838/pexels-photo-12838.jpeg?auto=compress&cs=tinysrgb&h=400&fit=crop&w=600", voice:"M" }
+  ];
+
+  let cards = [];          // shuffled deck: {pairIndex, form:'base'|'pp', text}
+  let flippedIndices = [];
+  let matchedCount = 0;
+  let moves = 0;
+  let locked = false;
+  let timerInterval = null;
+  let elapsedSeconds = 0;
+
+  const screens = {
+    welcome: document.getElementById('screen-welcome'),
+    activity: document.getElementById('screen-activity'),
+    final: document.getElementById('screen-final')
+  };
+
+  const gridEl = document.getElementById('grid');
+  const timerValueEl = document.getElementById('timer-value');
+  const pairsCountEl = document.getElementById('pairs-count');
+  const movesValueEl = document.getElementById('moves-value');
+  const feedbackToast = document.getElementById('feedback-toast');
+  const revealPanel = document.getElementById('reveal-panel');
+  const revealImg = document.getElementById('reveal-img');
+  const revealPairLabel = document.getElementById('reveal-pair-label');
+  const revealSentence = document.getElementById('reveal-sentence');
+  const btnListen = document.getElementById('btn-listen');
+  const listenLabel = document.getElementById('listen-label');
+  const btnStart = document.getElementById('btn-start');
+  const btnRetry = document.getElementById('btn-retry');
+
+  let lastMatchedPairIndex = null;
+
+  function shuffle(arr){
+    for(let i = arr.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function buildDeck(){
+    const deck = [];
+    PAIRS.forEach((p, idx) => {
+      deck.push({ pairIndex: idx, form:'base', text: p.base });
+      deck.push({ pairIndex: idx, form:'pp', text: p.pp });
+    });
+    return shuffle(deck);
+  }
+
+  function formatTime(sec){
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return m + ':' + String(s).padStart(2, '0');
+  }
+
+  function startTimer(){
+    stopTimer();
+    elapsedSeconds = 0;
+    timerValueEl.textContent = formatTime(0);
+    timerInterval = setInterval(() => {
+      elapsedSeconds++;
+      timerValueEl.textContent = formatTime(elapsedSeconds);
+    }, 1000);
+  }
+  function stopTimer(){
+    if(timerInterval){ clearInterval(timerInterval); timerInterval = null; }
+  }
+
+  function renderGrid(){
+    gridEl.innerHTML = '';
+    cards.forEach((c, i) => {
+      const cardEl = document.createElement('div');
+      cardEl.className = 'mcard';
+      cardEl.setAttribute('data-index', i);
+      cardEl.innerHTML = `
+        <div class="mcard-inner">
+          <div class="mcard-face mcard-front">?</div>
+          <div class="mcard-face mcard-back">${c.text}</div>
+        </div>`;
+      cardEl.addEventListener('click', () => onCardClick(i, cardEl));
+      gridEl.appendChild(cardEl);
+    });
+  }
+
+  function onCardClick(index, el){
+    if(locked) return;
+    if(el.classList.contains('flipped') || el.classList.contains('matched')) return;
+    if(flippedIndices.length >= 2) return;
+
+    el.classList.add('flipped');
+    flippedIndices.push({ index, el });
+
+    if(flippedIndices.length === 2){
+      moves++;
+      movesValueEl.textContent = moves;
+      locked = true;
+      setTimeout(evaluatePair, 550);
+    }
+  }
+
+  function evaluatePair(){
+    const [a, b] = flippedIndices;
+    const cardA = cards[a.index];
+    const cardB = cards[b.index];
+    const isMatch = cardA.pairIndex === cardB.pairIndex && cardA.form !== cardB.form;
+
+    if(isMatch){
+      a.el.classList.add('matched');
+      b.el.classList.add('matched');
+      matchedCount++;
+      pairsCountEl.textContent = matchedCount + ' / ' + PAIRS.length + ' PAIRS';
+      showFeedback(true);
+      showReveal(cardA.pairIndex);
+      flippedIndices = [];
+      locked = false;
+
+      if(matchedCount === PAIRS.length){
+        setTimeout(finishGame, 900);
+      }
+    } else {
+      a.el.classList.add('wrong');
+      b.el.classList.add('wrong');
+      showFeedback(false);
+      setTimeout(() => {
+        a.el.classList.remove('flipped','wrong');
+        b.el.classList.remove('flipped','wrong');
+        flippedIndices = [];
+        locked = false;
+      }, 850);
+    }
+  }
+
+  function showFeedback(isCorrect){
+    feedbackToast.className = 'feedback-toast show ' + (isCorrect ? 'correct' : 'incorrect');
+    if(isCorrect){
+      feedbackToast.innerHTML = `<svg viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Correct pair!`;
+    } else {
+      feedbackToast.innerHTML = `<svg viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 16.5h.01M12 3l9 16H3L12 3z" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg> Not a pair — try again.`;
+    }
+    clearTimeout(showFeedback._t);
+    showFeedback._t = setTimeout(() => { feedbackToast.className = 'feedback-toast'; }, 1400);
+  }
+
+  function showReveal(pairIndex){
+    lastMatchedPairIndex = pairIndex;
+    const p = PAIRS[pairIndex];
+    revealPanel.classList.remove('show');
+    void revealPanel.offsetWidth; // restart animation
+    revealPanel.classList.add('show');
+
+    revealImg.style.opacity = '0';
+    revealImg.style.display = '';
+    revealImg.onload = () => { revealImg.style.opacity = '1'; };
+    revealImg.onerror = () => { revealImg.style.display = 'none'; };
+    revealImg.alt = 'A real photo illustrating the verb ' + p.base.toLowerCase();
+    revealImg.src = p.img;
+
+    revealPairLabel.innerHTML = p.base + '<span class="arrow">→</span>' + p.pp;
+    revealSentence.textContent = p.sentence;
+
+    speakReveal();
+  }
+
+  function speakReveal(){
+    if(lastMatchedPairIndex === null) return;
+    const p = PAIRS[lastMatchedPairIndex];
+    btnListen.classList.add('speaking');
+    btnListen.disabled = true;
+    listenLabel.textContent = 'PLAYING…';
+    speakPhrase(p.sentence, p.voice, function(){
+      btnListen.classList.remove('speaking');
+      btnListen.disabled = false;
+      listenLabel.textContent = 'LISTEN';
+    });
+  }
+  btnListen.addEventListener('click', speakReveal);
+
+  function finishGame(){
+    stopTimer();
+    screens.activity.classList.remove('active');
+    screens.final.classList.add('active');
+    document.getElementById('final-time').textContent = formatTime(elapsedSeconds);
+    document.getElementById('final-moves-line').textContent = moves + (moves === 1 ? ' move' : ' moves');
+  }
+
+  function startGame(){
+    cards = buildDeck();
+    flippedIndices = [];
+    matchedCount = 0;
+    moves = 0;
+    locked = false;
+    lastMatchedPairIndex = null;
+    movesValueEl.textContent = '0';
+    pairsCountEl.textContent = '0 / ' + PAIRS.length + ' PAIRS';
+    revealPanel.classList.remove('show');
+    feedbackToast.className = 'feedback-toast';
+    renderGrid();
+    startTimer();
+  }
+
+  btnStart.addEventListener('click', () => {
+    screens.welcome.classList.remove('active');
+    screens.activity.classList.add('active');
+    startGame();
+  });
+
+  btnRetry.addEventListener('click', () => {
+    screens.final.classList.remove('active');
+    screens.activity.classList.add('active');
+    startGame();
+  });
+
+  /* ---------------- Natural human-voice pronunciation (male + female) ----------------
+     Three tiers, tried in order every single time (never a permanent sticky
+     disable after one hiccup, so a single dropped connection never locks the
+     whole activity into robotic audio):
+     1) A free built-in cloud-quality OS voice (Microsoft Edge "Online (Natural)",
+        Google US English, Samantha) when the browser already has one installed.
+     2) A recorded-quality neural voice (Amazon Polly, via a free public relay).
+     3) The browser's best built-in voice of the matching gender, only used if
+        neither of the above is available or reachable.
+     The voice gender always matches the subject of each sentence/photo. */
+  const ttsAudio = document.getElementById('tts-audio');
+  const NEURAL_VOICES = {
+    M: ["Matthew", "Joey"],
+    F: ["Joanna", "Kendra", "Salli"]
+  };
+  let consecutiveFailures = 0;
+
+  function pickNeuralVoice(gender, index){
+    const list = NEURAL_VOICES[gender] || NEURAL_VOICES.F;
+    return list[index % list.length];
+  }
+
+  let cachedVoices = [];
+  function refreshVoices(){
+    if('speechSynthesis' in window){ cachedVoices = window.speechSynthesis.getVoices(); }
+  }
+  if('speechSynthesis' in window){
+    refreshVoices();
+    window.speechSynthesis.onvoiceschanged = refreshVoices;
+  }
+
+  function pickFallbackVoice(gender){
+    if(!cachedVoices.length) return null;
+    const femaleNames = [/Samantha/i, /Zira/i, /Female/i, /Joanna/i, /Aria/i, /Jenny/i, /Victoria/i];
+    const maleNames   = [/Daniel/i, /David/i, /Alex/i, /Male/i, /Guy/i, /Fred/i, /Matthew/i];
+    const priorityNames = gender === 'M' ? maleNames : femaleNames;
+    for(const rx of priorityNames){
+      const v = cachedVoices.find(v => rx.test(v.name) && v.lang.startsWith('en'));
+      if(v) return v;
+    }
+    const enUS = cachedVoices.find(v => v.lang === 'en-US');
+    if(enUS) return enUS;
+    const anyEn = cachedVoices.find(v => v.lang && v.lang.startsWith('en'));
+    return anyEn || cachedVoices[0];
+  }
+
+  function pickPremiumVoice(gender){
+    if(!cachedVoices.length) return null;
+    const femaleNames = [
+      /Microsoft (Aria|Jenny|Michelle|Ana) Online \(Natural\)/i,
+      /Google US English/i,
+      /Samantha/i
+    ];
+    const maleNames = [
+      /Microsoft (Guy|Davis|Andrew|Christopher|Eric|Brian) Online \(Natural\)/i,
+      /Google UK English Male/i,
+      /Alex/i
+    ];
+    const priorityNames = gender === 'M' ? maleNames : femaleNames;
+    for(const rx of priorityNames){
+      const v = cachedVoices.find(v => rx.test(v.name) && v.lang && v.lang.startsWith('en'));
+      if(v) return v;
+    }
+    return null;
+  }
+
+  function speakWithVoice(text, voice, onEnd){
+    if(!('speechSynthesis' in window)){ if(onEnd) onEnd(); return; }
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'en-US';
+    utter.voice = voice;
+    utter.rate = 0.94; utter.pitch = 1.0; utter.volume = 1;
+    utter.onend = function(){ if(onEnd) onEnd(); };
+    utter.onerror = function(){ if(onEnd) onEnd(); };
+    window.speechSynthesis.speak(utter);
+  }
+
+  function fallbackSpeak(text, gender, onEnd){
+    if(!('speechSynthesis' in window)){ if(onEnd) onEnd(); return; }
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'en-US';
+    const v = pickFallbackVoice(gender);
+    if(v) utter.voice = v;
+    utter.rate = 0.9; utter.pitch = gender === 'M' ? 0.95 : 1.05; utter.volume = 1;
+    utter.onend = function(){ if(onEnd) onEnd(); };
+    utter.onerror = function(){ if(onEnd) onEnd(); };
+    window.speechSynthesis.speak(utter);
+  }
+
+  function attemptNeural(text, gender, voiceIndex, attempt, onSuccess, onFail){
+    const voiceName = pickNeuralVoice(gender, voiceIndex + attempt);
+    const url = 'https://api.streamelements.com/kappa/v2/speech?voice=' + voiceName + '&text=' + encodeURIComponent(text);
+    let settled = false;
+    const timeoutMs = consecutiveFailures >= 2 ? 4000 : 7000;
+    const safety = setTimeout(function(){
+      if(!settled){ settled = true; try{ ttsAudio.pause(); }catch(e){} onFail(); }
+    }, timeoutMs);
+
+    ttsAudio.onended = function(){
+      if(settled) return; settled = true; clearTimeout(safety);
+      consecutiveFailures = 0; onSuccess();
+    };
+    ttsAudio.onerror = function(){
+      if(settled) return; settled = true; clearTimeout(safety); onFail();
+    };
+
+    try{
+      ttsAudio.src = url;
+      const p = ttsAudio.play();
+      if(p && p.catch){
+        p.catch(function(){ if(settled) return; settled = true; clearTimeout(safety); onFail(); });
+      }
+    }catch(e){
+      if(!settled){ settled = true; clearTimeout(safety); onFail(); }
+    }
+  }
+
+  function speakPhrase(text, gender, onEnd){
+    let finished = false;
+    const finish = function(){ if(!finished){ finished = true; if(onEnd) onEnd(); } };
+
+    const premium = pickPremiumVoice(gender);
+    if(premium){ speakWithVoice(text, premium, finish); return; }
+
+    attemptNeural(text, gender, 0, 0, finish, function(){
+      attemptNeural(text, gender, 0, 1, finish, function(){
+        consecutiveFailures++;
+        fallbackSpeak(text, gender, finish);
+      });
+    });
+  }
+
+})();
+</script>
+
+</body>
+</html>
